@@ -561,10 +561,33 @@ var (
 // import path and the current directory's import path.
 func GetProjectRepoInfo() (*ProjectRepoInfo, error) {
 	repoInfoOnce.Do(func() {
-		repoInfoValue, repoInfoErr = getProjectRepoInfo()
+		if isUnderGOPATH() {
+			repoInfoValue, repoInfoErr = getProjectRepoInfo()
+		} else {
+			repoInfoValue = nil
+			repoInfoErr = fmt.Errorf("not implemented")
+		}
 	})
 
 	return repoInfoValue, repoInfoErr
+}
+
+func isUnderGOPATH() bool {
+	goPath := os.Getenv("GOPATH")
+	if goPath == "" {
+		return false
+	}
+
+	rel, err := filepath.Rel(goPath, CWD())
+	if err != nil {
+		return false
+	}
+
+	if strings.Contains(rel, "..") {
+		return false
+	}
+
+	return true
 }
 
 func getProjectRepoInfo() (*ProjectRepoInfo, error) {
